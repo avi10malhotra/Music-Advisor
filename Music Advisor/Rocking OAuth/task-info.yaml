@@ -1,0 +1,263 @@
+type: edu
+custom_name: stage2
+files:
+- name: src/advisor/Main.java
+  visible: true
+  text: |
+    package advisor;
+
+    public class Main {
+        public static void main(String[] args) {
+            System.out.println("Hello World!");
+        }
+    }
+  learner_created: false
+- name: build.gradle
+  visible: true
+  text: |-
+    apply plugin: 'java'
+    apply plugin: 'application'
+
+    group 'advisor'
+    version '1.0-SNAPSHOT'
+
+    sourceCompatibility = 11
+    mainClassName = 'advisor.Main'
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        compile 'com.google.code.gson:gson:+'
+    }
+
+    jar {
+        manifest {
+            attributes 'Main-Class' : 'advisor.Main'
+        }
+        from {
+            configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+        }
+    }
+  learner_created: false
+- name: test/MusicAdvisorTest.java
+  visible: false
+  text: |
+    import advisor.Main;
+
+    import org.hyperskill.hstest.stage.StageTest;
+    import org.hyperskill.hstest.testcase.CheckResult;
+    import org.hyperskill.hstest.testcase.TestCase;
+
+    import java.util.List;
+    import java.util.function.Function;
+
+    class Attach {
+        Function<String, CheckResult> func;
+
+        Attach(Function<String, CheckResult> func) {
+            this.func = func;
+        }
+    }
+
+    public class MusicAdvisorTest extends StageTest<Attach> {
+        public MusicAdvisorTest() {
+            super(Main.class);
+        }
+
+        @Override
+        public List<TestCase<Attach>> generate() {
+            return List.of(
+                new TestCase<Attach>()
+                    .setInput("auth\nexit")
+                    .setAttach(new Attach(reply -> {
+                        if (!reply.contains("---SUCCESS---")) {
+                            return new CheckResult(false,
+                                "There is no \"---SUCCESS---\" after \"auth\" but should be");
+                        }
+                        if (!reply.contains("https://accounts.spotify.com/authorize?")) {
+                            return new CheckResult(false,
+                                "There is no link after \"auth\" but should be");
+                        }
+                        if (reply.contains("a19ee7dbfda443b2a8150c9101bfd645")) {
+                            return new CheckResult(false,
+                                    "You shouldn't use the client_id from the example!! " +
+                                            "You should create your own id on the spotify site.");
+                        }
+                        return CheckResult.correct();
+                    })),
+
+                new TestCase<Attach>()
+                    .setInput("new\nexit")
+                    .setAttach(new Attach(reply -> {
+                        if (!reply.strip().startsWith("Please, provide access for application.")) {
+                            return new CheckResult(false,
+                                "When no access provided you should output " +
+                                    "\"Please, provide access for application.\"");
+                        }
+                        return CheckResult.correct();
+                    })),
+
+                new TestCase<Attach>()
+                    .setInput("featured\nexit")
+                    .setAttach(new Attach(reply -> {
+                        if (!reply.strip().startsWith("Please, provide access for application.")) {
+                            return new CheckResult(false,
+                                "When no access provided you should output " +
+                                    "\"Please, provide access for application.\"");
+                        }
+                        return CheckResult.correct();
+                    })),
+
+                new TestCase<Attach>()
+                    .setInput("auth\nnew\nfeatured\nexit")
+                    .setAttach(new Attach(reply -> {
+                        if (!reply.contains("---NEW RELEASES---")) {
+                            return new CheckResult(false,
+                                "When \"new\" was inputted there should be \"---NEW RELEASES---\" line");
+                        }
+                        if (!reply.contains("---FEATURED---")) {
+                            return new CheckResult(false,
+                                "When \"featured\" was inputted there should be \"---FEATURED---\" line");
+                        }
+                        return CheckResult.correct();
+                    }))
+
+            );
+        }
+
+        @Override
+        public CheckResult check(String reply, Attach clue) {
+            return clue.func.apply(reply);
+        }
+    }
+  learner_created: false
+- name: src/advisor/EOption.java
+  visible: true
+  text: "package advisor;\n\npublic enum EOption {\n\tNew(\"new\"),\n\tFeatured(\"\
+    featured\"),\n\tCategories(\"categories\"),\n\tPlaylists(\"playlists\"),\n\tExit(\"\
+    exit\");\n\t\n\tprivate final String name;\n\t\n\tEOption(String name) {this.name\
+    \ = name;}\n\t\n\tpublic String getName() {return this.name;}\n\t\n\tpublic static\
+    \ EOption fromName(String name) {\n\t\tfor (EOption option : EOption.class.getEnumConstants())\
+    \ {\n\t\t\tif (option.getName().contentEquals(name))\n\t\t\t\treturn option;\n\
+    \t\t}\n\t\treturn null;\n\t}\n}\n"
+  learner_created: true
+- name: src/advisor/Service.java
+  visible: true
+  text: "package advisor;\n\nimport java.util.ArrayList;\nimport java.util.Arrays;\n\
+    import java.util.List;\n\npublic class Service implements IService {\n\t@Override\n\
+    \tpublic List<Playlist> getFeatured() {\n\t\treturn Arrays.asList(\n\t\t\t\tnew\
+    \ Playlist(\"Mellow Morning\"),\n\t\t\t\tnew Playlist(\"Wake Up and Smell the\
+    \ Coffee\"),\n\t\t\t\tnew Playlist(\"Monday Motivation\"),\n\t\t\t\tnew Playlist(\"\
+    Songs to Sing in the Shower\")\n\t\t);\n\t}\n\t\n\t@Override\n\tpublic List<Album>\
+    \ getNew() {\n\t\treturn Arrays.asList(\n\t\t\t\tnew Album(\n\t\t\t\t\t\t\"Mountains\"\
+    ,\n\t\t\t\t\t\tArrays.asList(\n\t\t\t\t\t\t\t\tnew Artist(\"Sia\"),\n\t\t\t\t\t\
+    \t\t\tnew Artist(\"Diplo\"),\n\t\t\t\t\t\t\t\tnew Artist(\"Labrinth\"))\n\t\t\t\
+    \t),\n\t\t\t\tnew Album(\"Runaway\", new Artist(\"Lil Peep\")),\n\t\t\t\tnew Album(\"\
+    The Greatest Show\", new Artist(\"Panic! At The Disco\")),\n\t\t\t\tnew Album(\"\
+    All Out Life\", new Artist(\"Slipknot\"))\n\t\t);\n\t}\n\t\n\t@Override\n\tpublic\
+    \ List<Category> getCategories() {\n\t\treturn Arrays.asList(\n\t\t\t\tnew Category(\"\
+    Top Lists\"),\n\t\t\t\tnew Category(\"Pop\"),\n\t\t\t\tnew Category(\"Mood\"),\n\
+    \t\t\t\tnew Category(\"Latin\")\n\t\t);\n\t}\n\t\n\t@Override\n\tpublic List<Playlist>\
+    \ getPlaylists(Category category) {\n\t\tif (!\"Mood\".equals(category.getName()))\
+    \ {return new ArrayList<>();}\n\t\t\n\t\treturn Arrays.asList(\n\t\t\t\tnew Playlist(\"\
+    Walk Like A Badass\"),\n\t\t\t\tnew Playlist(\"Rage Beats\"),\n\t\t\t\tnew Playlist(\"\
+    Arab Mood Booster\"),\n\t\t\t\tnew Playlist(\"Sunday Stroll\")\n\t\t);\n\t}\n\
+    }\n"
+  learner_created: true
+- name: src/advisor/Artist.java
+  visible: true
+  text: "package advisor;\n\npublic class Artist {\n\tprivate final String name;\n\
+    \t\n\tArtist(String name) {this.name = name;}\n\t\n\tpublic String getName() {return\
+    \ this.name;}\n\t\n\t@Override\n\tpublic String toString() {return this.name;}\n\
+    }\n"
+  learner_created: true
+- name: src/advisor/Album.java
+  visible: true
+  text: "package advisor;\n\nimport java.util.Collections;\nimport java.util.List;\n\
+    \npublic class Album {\n\tprivate final String title;\n\tprivate final List<Artist>\
+    \ artists;\n\t\n\tAlbum(String title, List<Artist> artists) {\n\t\tthis.title\
+    \ = title;\n\t\tthis.artists = artists;\n\t}\n\t\n\tAlbum(String title, Artist\
+    \ artist) {\n\t\tthis.title = title;\n\t\tthis.artists = Collections.singletonList(artist);\n\
+    \t}\n\t\n\tpublic String getTitle() {return title;}\n\t\n\tpublic List<Artist>\
+    \ getArtists() {return artists;}\n\t\n\t@Override\n\tpublic String toString()\
+    \ {\n\t\tStringBuilder str = new StringBuilder(\" [\");\n\t\t\n\t\tif (artists\
+    \ != null) {\n\t\t\tint i = 1;\n\t\t\tfor (Artist artist : artists) {\n\t\t\t\t\
+    str.append(artist);\n\t\t\t\tif (i++ < artists.size())\n\t\t\t\t\tstr.append(\"\
+    , \");\n\t\t\t}\n\t\t}\n\t\t\n\t\treturn str.append(']').toString();\n\t}\n}\n\
+    \n"
+  learner_created: true
+- name: src/advisor/IService.java
+  visible: true
+  text: "package advisor;\n\nimport java.util.List;\n\npublic interface IService {\n\
+    \tList<Playlist> getFeatured();\n\tList<Album> getNew();\n\tList<Category> getCategories();\n\
+    \tList<Playlist> getPlaylists(Category category);\n\t\n}\n"
+  learner_created: true
+- name: src/advisor/ConsoleUserInteractionManager.java
+  visible: true
+  text: "package advisor;\n\nimport java.util.Scanner;\n\npublic class ConsoleUserInteractionManager\
+    \ implements IUserInteractionManager {\n\tprivate static ConsoleUserInteractionManager\
+    \ instance;\n\tprivate static final Scanner sc = new Scanner(System.in);\n\t\n\
+    \tprivate final IService service;\n\t\n\tprivate ConsoleUserInteractionManager(IService\
+    \ service) {\n\t\tthis.service = service;\n\t}\n\t\n\tpublic static ConsoleUserInteractionManager\
+    \ createInstance(IService service) {\n\t\t\n\t\tif (instance == null) {\n\t\t\t\
+    synchronized (ConsoleUserInteractionManager.class) {\n\t\t\t\tif (instance ==\
+    \ null) {\n\t\t\t\t\tinstance = new ConsoleUserInteractionManager(service);\n\t\
+    \t\t\t}\n\t\t\t}\n\t\t}\n\t\treturn instance;\n\t}\n\t\n\tpublic static ConsoleUserInteractionManager\
+    \ getInstance() {return instance;}\n\t\n\t@Override\n\tpublic void startInteraction()\
+    \ {\n\t\t\n\t\tEOption option;\n\t\t\n\t\tdo {\n\t\t\tString[] inputs = sc.nextLine().split(\"\
+    \ \");\n\t\t\toption = EOption.fromName(inputs[0]);\n\t\t\t\n\t\t\tif (option\
+    \ == null) {\n\t\t\t\tSystem.out.println(\"---INVALID OPTION---\");\n\t\t\t\t\
+    continue;\n\t\t\t}\n\t\t\tswitch (option) {\n\t\t\t\tcase New:\n\t\t\t\t\tSystem.out.println(\"\
+    ---NEW RELEASES---\");\n\t\t\t\t\tservice.getNew().forEach(System.out::println);\n\
+    \t\t\t\t\tbreak;\n\t\t\t\tcase Featured:\n\t\t\t\t\tSystem.out.println(\"---FEATURED---\"\
+    );\n\t\t\t\t\tservice.getFeatured().forEach(System.out::println);\n\t\t\t\t\t\
+    break;\n\t\t\t\tcase Categories:\n\t\t\t\t\tSystem.out.println(\"---CATEGORIES---\"\
+    );\n\t\t\t\t\tservice.getCategories().forEach(System.out::println);\n\t\t\t\t\t\
+    break;\n\t\t\t\tcase Playlists:\n\t\t\t\t\tif (inputs.length < 2 ) {\n\t\t\t\t\
+    \t\tSystem.out.println(\"---NO CATEGORY---\");\n\t\t\t\t\t\tcontinue;\n\t\t\t\t\
+    \t}\n\t\t\t\t\tSystem.out.println(\"---\" + inputs[1].toUpperCase() + \"PLAYLISTS---\"\
+    );\n\t\t\t\t\tservice.getPlaylists(new Category(inputs[1])).forEach(System.out::println);\n\
+    \t\t\t\t\tbreak;\n\t\t\t\tcase Exit:\n\t\t\t\t\tSystem.out.println(\"---GOODBYE!---\"\
+    );\n\t\t\t\t\tbreak;\n\t\t\t\tdefault:\n\t\t\t\t\tSystem.out.println(\"---INVALID\
+    \ OPTION---\");\n\t\t\t}\n\t\t} while (option != EOption.Exit);\n\t\t\n\t}\n}\n"
+  learner_created: true
+- name: src/advisor/Category.java
+  visible: true
+  text: "package advisor;\n\npublic class Category {\n\tprivate final String name;\n\
+    \t\n\tCategory(String name) {this.name = name;}\n\t\n\tpublic String getName()\
+    \ { return name; }\n\t\n\t@Override\n\tpublic String toString() {return this.name;}\n\
+    }\n"
+  learner_created: true
+- name: src/advisor/IUserInteractionManager.java
+  visible: true
+  text: "package advisor;\n\npublic interface IUserInteractionManager {\n\tvoid startInteraction();\n\
+    }\n"
+  learner_created: true
+- name: src/advisor/Playlist.java
+  visible: true
+  text: "package advisor;\n\npublic class Playlist {\n\tprivate final String name;\n\
+    \t\n\tpublic Playlist(String name) { this.name = name; }\n\t\n\tpublic String\
+    \ getName() { return name; }\n\t\n\t@Override\n\tpublic String toString() { return\
+    \ name; }\n}\n"
+  learner_created: true
+feedback_link: https://hyperskill.org/projects/62/stages/336/implement#comment
+status: Failed
+feedback:
+  message: |-
+    Wrong answer in test #1
+
+    There is no &quot;---SUCCESS---&quot; after &quot;auth&quot; but should be
+
+    Please find below the output of your program during this failed test.
+    Note that the &#39;&gt;&#39; character indicates the beginning of the input line.
+
+    ---
+
+    &gt; auth
+    ---INVALID OPTION---
+    &gt; exit
+    ---GOODBYE!---
+  time: Sat, 09 Jan 2021 14:12:40 UTC
+record: 2
