@@ -9,8 +9,8 @@ public class Info {
 	protected static final String FEATURED_URL = "/v1/browse/featured-playlists";
 	
 	protected static final String REDIRECT_URI = "http://localhost:8080";
-	protected static final String CLIENT_ID = "b5c588b20d9840faa9cd29b449188f7b";
-	protected static final String CLIENT_SECRET = "92eab706498245bcba8bf3a484e25b78";
+	protected static final String CLIENT_ID = "{insert Client ID here}";
+	protected static final String CLIENT_SECRET = "{insert Client Secret here}";
 	
 	protected static String ACCESS_TOKEN = "";
 	protected static String AUTH_CODE = "";
