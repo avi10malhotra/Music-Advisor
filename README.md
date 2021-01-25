@@ -25,9 +25,8 @@ As mentioned above, this interface contains only one method signature, ```advise
   - AdviseAlbums
   - AdviseCategories
   - AdviseFeatures
-  - AdvisePlaylists
-<br>
-Each of these methods take in the returned _JsonArray_ of _items_ from the API. The array is then iterated over to extract the relevant _JsonObjects_ and information from these objects is finally printed to the screen.
+  - AdvisePlaylists  
+_Note:_ Each of these methods take in the returned _JsonArray_ of _items_ from the API. The array is then iterated over to extract the relevant _JsonObjects_ and information from these objects is finally printed to the screen.
 ### Authorization.java
 This file, as the name suggests, handles _[OAuth](https://www.youtube.com/watch?v=CPbvxxslDTU&ab_channel=InterSystemsLearningServices)_ - a protocol for authorization. It contains two predominately defined methods: ```createHttpServer()``` and ```authorizeRequest()```. The first method generates a URI as a hyperlink for the user to click and authorize the application. Consequently, the second method builds the Http request using the authenticated instance fields to retrieve the _access_token_. It is worth mentioning that both methods invoke methods on the **Interaction** class that primarily handles the http exchanges.    
 ### Interaction.java
